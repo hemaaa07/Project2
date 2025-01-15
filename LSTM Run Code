@@ -1,0 +1,37 @@
+# Define input shape for LSTM model
+input_shape = (X_train_ros.shape[1], 1)
+inputs = tf.keras.layers.Input(shape=input_shape)
+l1 = tf.keras.layers.LSTM(64, activation='tanh')(inputs)
+l1 = tf.keras.layers.Dropout(0.20)(l1)
+outputs = tf.keras.layers.Dense(1, activation='sigmoid')(l1)
+
+model = tf.keras.Model(inputs=inputs, outputs=outputs)
+model.compile(optimizer='rmsprop', loss='binary_crossentropy', metrics=['accuracy'])
+
+# Train LSTM model
+history = model.fit(
+    X_train_ros.reshape(X_train_ros.shape[0], X_train_ros.shape[1], 1),
+    y_train_ros,
+    validation_split=0.20,
+    epochs=50,
+    callbacks=[tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10)]
+)
+
+
+# Make predictions on the test set
+y_pred_prob = model.predict(X_test.reshape(X_test.shape[0], X_test.shape[1], 1))
+y_pred = (y_pred_prob > 0.5).astype(int)  # Convert probabilities to binary predictions
+
+# Calculate accuracy
+accuracy = accuracy_score(y_test, y_pred)
+print(f'Accuracy: {accuracy:.4f}')
+
+# Generate confusion matrix
+conf_matrix = confusion_matrix(y_test, y_pred)
+print('Confusion Matrix:')
+print(conf_matrix)
+
+# Generate classification report
+class_report = classification_report(y_test, y_pred)
+print('Classification Report:')
+print(class_report)
